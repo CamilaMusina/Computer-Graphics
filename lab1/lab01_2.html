@@ -1,0 +1,112 @@
+<HTML>
+<BODY>
+<canvas id='lab01' width='400' height='300' style="border:1px solid">
+</canvas>
+<script>
+        var canvas = document.getElementById('lab01');
+        var ctx = canvas.getContext('2d');
+
+        var x = 0;
+        var y = 0;
+        var xz = 0;
+        var yz = 0;
+        var flag = 0, count = 0;
+
+        function line_ESE(x0, y0, x1, y1) {
+				var delta = 0;
+				var ya=0;
+				for (i=0; i<(x1-x0); i++) {
+					if (delta>=(x1-x0)) {
+						delta-=2*(x1-x0);
+						ya++;
+					}
+					delta+=2*(y1-y0);
+					ctx.fillRect(x0+i, y0+ya, 1, 1);
+				}
+			}
+			function line_SSE(x0, y0, x1, y1) {
+				var delta = 0;
+				var xa=0;
+				for (i=0; i<(y1-y0); i++) {
+					if (delta>=(y1-y0)) {
+						delta-=2*(y1-y0);
+						xa++;
+					}
+					delta+=2*(x1-x0);
+					ctx.fillRect(x0+xa, y0+i, 1, 1);
+				}
+			}
+			function line_ENE(x0, y0, x1, y1) {
+				var delta = 0;
+				var ya=0;
+				for (i=0; i<(x1-x0); i++) {
+					if (delta>=(x1-x0)) {
+						delta-=2*(x1-x0);
+						ya--;
+					}
+					delta-=2*(y1-y0);
+					ctx.fillRect(x0+i, y0+ya, 1, 1);
+				}
+			}
+			function line_NNE(x0, y0, x1, y1) {
+				var delta = 0;
+				var xa=0;
+				for (i=0; i<(y0-y1); i++) {
+					if (delta>=(y0-y1)) {
+						delta-=2*(y0-y1);
+						xa++;
+					}
+					delta+=2*(x1-x0);
+					ctx.fillRect(x0+xa, y0-i, 1, 1);
+				}
+			}
+
+        function line(x0, y0, x1, y1) {
+            var a0, a1, b0, b1;
+				if (x0>x1) { a0=x1; a1=x0; b0=y1; b1=y0; }
+				else { a0=x0; a1=x1; b0=y0; b1=y1; }
+				if (b1>b0) {
+					if ((b1-b0)<(a1-a0)) {
+						line_ESE(a0, b0, a1, b1);
+					} else line_SSE(a0, b0, a1, b1);
+				} else if ((b0-b1)<(a1-a0)) {
+						line_ENE(a0, b0, a1, b1);
+					} else line_NNE(a0, b0, a1, b1);
+        }
+
+        document.addEventListener("click", function(event) {
+                if ((event.which == 1)&&(count<4)) {
+                    ctx.fillStyle='#000000';
+                    x = event.offsetX;
+					y = event.offsetY;
+                    if (count==1) {
+						line(xz, yz, x, yz);
+						line(x,yz,x,y);
+						line(x,y,xz,y);
+						line(xz,y,xz,yz);
+					}
+					if (count==2) {
+					    xz=event.offsetX;
+					    yz=event.offsetY;
+					}
+					if (count==3) {
+						line(xz,yz,x,y);
+						cut[0]=xz;
+						cut[1]=yz;
+						cut[2]=x;
+						cut[3]=y;
+					}
+					count++;
+					ctx.fillRect(x, y, 1, 1);
+                }
+                if (flag == 0){
+                    xz=x;
+                    xy=y;
+                    flag++;
+                }
+            });
+
+
+    </script>
+</BODY>
+</HTML>
