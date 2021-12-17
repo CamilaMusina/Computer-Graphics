@@ -1,0 +1,125 @@
+<HEAD>
+<BODY>
+<canvas id='lab.html' width='500' height='500'></canvas>
+<script>
+
+        var canvas = document.getElementById('lab.html');
+        var ctx = canvas.getContext("2d");
+
+        function Line(ctx, x0, y0, x1, y1) {
+            var dy = Math.abs(y1-y0);
+            var dx = Math.abs(x1-x0);
+            var dmax = Math.max(dx, dy);
+            var dmin = Math.min(dx, dy);
+            var xdir = 1;
+            if (x1<x0) xdir = -1;
+            var ydir = 1;
+            if (y1<y0) ydir = -1;
+            var eps = 0;
+            var s = 1;
+            var k=2*dmin;
+            if (dy<=dx) {
+                var y = y0;
+                for (var x=x0; x*xdir<=x1*xdir; x+=xdir) {
+                    ctx.fillRect(x*s, y*s, 1*s, 1*s);
+                    eps = eps+k;
+                    if (eps>dmax) {
+                        y+=ydir;
+                        eps = eps - 2*dmax;
+                    }
+                }
+            } else {
+                var x = x0;
+                for (var y=y0; y*ydir<=y1*ydir; y+=ydir) {
+                    ctx.fillRect(x*s, y*s, 1*s, 1*s);
+                    eps = eps+k;
+                    if (eps>dmax) {
+                        x+=xdir;
+                        eps = eps - 2*dmax;
+                    }
+                }
+            }
+        }
+
+        var parray = new Array();
+        var n = 0;
+        var state = 0;
+        var count_bez = 0;
+
+        function drawPoint(x, y) {
+            ctx.fillRect(x,y,8,8);
+            ctx.clearRect(x+1,y+1,6,6);
+        }
+
+        function getB(i, n, t) {
+
+	        function f(n) {
+		        return (n <= 1) ? 1 : n * f(n - 1);
+	        };
+
+	        return (f(n)/(f(i) * f(n - i))) * Math.pow(t, i) * Math.pow(1 - t, n - i);
+        }
+
+        function drawCurve(curve) {
+            for (var i = count_bez-1; i >= 0; i--) {
+                Line(ctx, curve[2*i], curve[2*i + 1],
+                            curve[2*i - 2], curve[2*i - 1]);
+            }
+        }
+
+        function getBezierCurve(step) {
+	        var res = new Array()
+
+	        for (var t = 0; t < 1 + step; t += step) {
+		        if (t > 1) {
+			        t = 1;
+		        }
+
+                res[2 * count_bez] = 0
+			    res[2 * count_bez + 1] = 0
+
+		        for (var i = 0; i < n; i++) {
+			        var b = getB(i, n - 1, t);
+
+			        res[2 * count_bez] += parray[2 * i] * b;
+			        res[2 * count_bez + 1] += parray[2 * i + 1] * b;
+		        }
+
+                count_bez++;
+	        }
+
+	        return res;
+        }
+
+        canvas.addEventListener('click', function(e) {
+                if (state == 0) {
+                    parray[2 * n] 	= e.offsetX;
+                    parray[2 * n + 1] 	= e.offsetY;
+                    drawPoint(e.offsetX, e.offsetY);
+                    n++;
+                }
+            });
+
+        document.addEventListener("keydown", function(event){
+            state = 1;
+            curve = getBezierCurve(0.01);
+
+            rad = 0
+            setInterval(function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                curve_rotate = new Array()
+                for (var i = count_bez-1; i >=0; i--) {
+                    curve_rotate[2 * i] = curve[2 * i] * Math.cos(rad) + curve[2 * i - 1] * Math.sin(rad)
+                    curve_rotate[2 * i - 1] = -1 * curve[2 * i] * Math.sin(rad) + curve[2 * i - 1] * Math.cos(rad)
+                }
+
+                drawCurve(curve_rotate)
+                rad -= 0.2
+            }, 100)
+
+            return false;
+        })
+    </script>
+</BODY>
+</HEAD>
