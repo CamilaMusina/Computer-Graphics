@@ -1,0 +1,48 @@
+<HTML>
+<BODY>
+<canvas id="lab" width="500" height="400" style='border: 1px solid'>
+</canvas>
+<script>
+        function drawLine(context, x0, y0, x1, y1) {
+                const deltaX = Math.abs(x1 - x0);
+                const deltaY = Math.abs(y1 - y0);
+                const signX = x0 < x1 ? 1 : -1;
+                const signY = y0 < y1 ? 1 : -1;
+
+                let eps = deltaX - deltaY;
+
+                context.fillRect(x1, y1, 1, 1);
+                while (x0 != x1 || y0 != y1) {
+                        context.fillRect(x0, y0, 1, 1);
+                        var eps2 = eps * 2;
+                        if(eps2 > -deltaY) {
+                                eps -= deltaY;
+                                x0 += signX;
+                        }
+                        if (eps2 < deltaX) {
+                                eps += deltaX;
+                                y0 += signY;
+                        }
+                }
+        }
+
+        var canvas = document.getElementById("lab");
+        var ctx = canvas.getContext("2d");
+
+        var flag = 0;
+        canvas.addEventListener("click", function(event){
+                        if (!flag) {
+                                x0 = event.offsetX;
+                                y0 = event.offsetY;
+                                flag = 1;
+                        } else {
+                                x1 = event.offsetX;
+                                y1 = event.offsetY;
+                                drawLine(ctx, x0, y0, x1, y1);
+                                flag = 0;
+                        }
+                });
+
+</script>
+</BODY>
+</HTML>
