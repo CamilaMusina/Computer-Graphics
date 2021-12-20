@@ -1,0 +1,328 @@
+<HTML>
+<BODY>
+<canvas id='lab07' width='500' height='500'></canvas>
+<script>
+	var canvas = document.getElementById("lab07");
+	canvas.oncontextmenu = function() { return false; }
+	var ctx = canvas.getContext("2d", {antialias:false,depth: false});
+
+	var parray = new Array();
+	var rarray = new Array();
+	var state = 0;
+	var n = 0, r = 0;
+	var x0, y0;
+	var w = canvas.width, h = canvas.height;
+	var maxy = 0, miny = canvas.height;
+
+
+	function Line(ctx, x0, y0, x1, y1) {
+		var dy = Math.abs(y1-y0);
+		var dx = Math.abs(x1-x0);
+		var dmax = Math.max(dx, dy);
+		var dmin = Math.min(dx, dy);
+		var xdir = 1;
+		if (x1<x0) xdir = -1;
+		var ydir = 1;
+		if (y1<y0) ydir = -1;
+		var eps = 0;
+		var s = 1;
+		var k=2*dmin;
+		if (dy<=dx) {
+			var y = y0;
+			for (var x=x0; x*xdir<=x1*xdir; x+=xdir) {
+				ctx.fillRect(x*s, y*s, 1*s, 1*s);
+				eps = eps+k;
+				if (eps>dmax) {
+					y+=ydir;
+					eps = eps - 2*dmax;
+				}
+			}
+		} else {
+			var x = x0;
+			for (var y=y0; y*ydir<=y1*ydir; y+=ydir) {
+				ctx.fillRect(x*s, y*s, 1*s, 1*s);
+				eps = eps+k;
+				if (eps>dmax) {
+					x+=xdir;
+					eps = eps - 2*dmax;
+				}
+			}
+		}
+	}
+
+function borderFill(ctx, poly) {
+	var bpoints = new Array();
+	maxy = 0; miny = h;
+	for (var i=0; i<poly.length; i++) {
+		if (Math.round(poly[2*i+1])>maxy) maxy = Math.round(poly[2*i+1]);
+		if (Math.round(poly[2*i+1])<miny) miny = Math.round(poly[2*i+1]);
+	}
+	console.log("maxmin "+maxy+" "+miny);
+	var idata = ctx.getImageData(0,0,w,h);
+
+	var x0 = poly[2*n-2], y0 = poly[2*n-1];
+	var x1 = poly[0], y1 = poly[1];
+	console.log(x0+","+y0+"; "+x1+","+y1);
+	var k = (y1-y0)/(x1-x0);
+	var b = y0 - k*x0;
+	var up = y0, down = y1;
+	if (y1<y0) { up = y1; down = y0; }
+	var sign = (y1-y0)/Math.abs(y1-y0);
+	for (var j=Math.round(up); j<=Math.round(down); j+=1) {
+	//for (var j=Math.round(y0); sign*j<=sign*y1; j+=sign) {
+		if (! Array.isArray(bpoints[j]) ) {
+			bpoints[j] = new Array();
+		}
+		bpoints[j].push( Math.round((j-b)/k) );
+			console.log(bpoints[j]);
+	}
+	var min = Math.min(y0, y1);
+	if (! Array.isArray(bpoints[min]) ) {
+		bpoints[min] = new Array();
+	}
+	bpoints[min].push( Math.round( (min-b)/k ) );
+
+	for (var i = 1; i<n; i++) {
+		x0 = poly[2*i], y0 = poly[2*i+1];
+		x1 = poly[2*i-2], y1 = poly[2*i-1];
+		k = (y1-y0)/(x1-x0);
+		b = y0 - k*x0;
+		sign = (y1-y0)/Math.abs(y1-y0);
+		//for (var j=Math.round(y0); sign*j<=sign*(y1); j+=sign) {
+		up = y0; down = y1;
+		if (y1<y0) { up = y1; down = y0; }
+		for (var j=Math.round(up); j<=Math.round(down); j+=1) {
+			if (! Array.isArray(bpoints[j]) ) {
+				bpoints[j] = new Array();
+			}
+			bpoints[j].push( Math.round((j-b)/k) );
+			console.log(bpoints[j]);
+		}
+		min = Math.min(y0, y1);
+		if (! Array.isArray(bpoints[min]) ) {
+			bpoints[min] = new Array();
+		}
+		bpoints[min].push( Math.round( (min-b)/k ) );
+	}
+
+	console.log(bpoints)
+	console.log("maxmin1 "+maxy+" "+miny);
+	for (var ti=miny; ti<=maxy; ti++) {
+		console.log("final "+bpoints[ti])
+		if (! Array.isArray(bpoints[ti]) ) {
+			continue;
+		}
+		var xarray = bpoints[ti].sort(function(a, b){return a-b;});
+		var size = xarray.length;
+		for (var k=0; k<size/2; k++) {
+			console.log("line");
+			for (var tj=xarray[k*2]+1; tj<xarray[k*2+1]; tj++) {
+				idata.data[(ti*w+tj)*4] = 255;
+				idata.data[(ti*w+tj)*4+3] = 255;
+			}
+		}
+	}
+	ctx.putImageData(idata, 0, 0);
+}
+
+function borderFillColor(ctx, poly, color) {
+	console.log("borderFillColor:"+ poly);
+	var bpoints = new Array();
+	maxy = 0; miny = h;
+	var n = poly.length/2;
+	console.log("n="+n);
+	for (var i=0; i<poly.length; i++) {
+		if (Math.round(poly[2*i+1])>maxy) maxy = Math.round(poly[2*i+1]);
+		if (Math.round(poly[2*i+1])<miny) miny = Math.round(poly[2*i+1]);
+	}
+	console.log("maxmin "+maxy+" "+miny);
+	var idata = ctx.getImageData(0,0,w,h);
+
+	var x0 = poly[2*n-2], y0 = poly[2*n-1];
+	var x1 = poly[0], y1 = poly[1];
+	console.log(x0+","+y0+"; "+x1+","+y1);
+	var k = (y1-y0)/(x1-x0);
+	var b = y0 - k*x0;
+	var up = y0, down = y1;
+	if (y1<y0) { up = y1; down = y0; }
+	var sign = (y1-y0)/Math.abs(y1-y0);
+	for (var j=Math.round(up); j<=Math.round(down); j+=1) {
+	//for (var j=Math.round(y0); sign*j<=sign*y1; j+=sign) {
+		if (! Array.isArray(bpoints[j]) ) {
+			bpoints[j] = new Array();
+		}
+		bpoints[j].push( Math.round((j-b)/k) );
+			console.log(bpoints[j]);
+	}
+	var min = Math.min(y0, y1);
+	if (! Array.isArray(bpoints[min]) ) {
+		bpoints[min] = new Array();
+	}
+	bpoints[min].push( Math.round( (min-b)/k ) );
+
+	for (var i = 1; i<n; i++) {
+		x0 = poly[2*i], y0 = poly[2*i+1];
+		x1 = poly[2*i-2], y1 = poly[2*i-1];
+		k = (y1-y0)/(x1-x0);
+		b = y0 - k*x0;
+		sign = (y1-y0)/Math.abs(y1-y0);
+		//for (var j=Math.round(y0); sign*j<=sign*(y1); j+=sign) {
+		up = y0; down = y1;
+		if (y1<y0) { up = y1; down = y0; }
+		for (var j=Math.round(up); j<=Math.round(down); j+=1) {
+			if (! Array.isArray(bpoints[j]) ) {
+				bpoints[j] = new Array();
+			}
+			bpoints[j].push( Math.round((j-b)/k) );
+			console.log(bpoints[j]);
+		}
+		min = Math.min(y0, y1);
+		if (! Array.isArray(bpoints[min]) ) {
+			bpoints[min] = new Array();
+		}
+		bpoints[min].push( Math.round( (min-b)/k ) );
+	}
+
+	console.log(bpoints)
+	console.log("maxmin1 "+maxy+" "+miny);
+	for (var ti=miny; ti<=maxy; ti++) {
+		console.log("final "+bpoints[ti])
+		if (! Array.isArray(bpoints[ti]) ) {
+			continue;
+		}
+		var xarray = bpoints[ti].sort(function(a, b){return a-b;});
+		var size = xarray.length;
+		for (var k=0; k<size/2; k++) {
+			console.log("line");
+			for (var tj=xarray[k*2]+1; tj<=xarray[k*2+1]; tj++) {
+				idata.data[(ti*w+tj)*4] = (color&0xff0000)>>16;
+				idata.data[(ti*w+tj)*4+1] = (color&0x00ff00)>>8;
+				idata.data[(ti*w+tj)*4+2] = color&0x0000ff;
+				idata.data[(ti*w+tj)*4+3] = 255;
+			}
+		}
+	}
+	console.log(color&0x0000ff);
+	ctx.putImageData(idata, 0, 0);
+}
+
+function color2dPlane(L, parray, color) {
+	/*
+		N.x*(P2.x-P1.x)+N.y*(P2.y-P1.y)+N.z*(P2.z-P1.z) = 0
+		N.x*(P3.x-P1.x)+N.y*(P3.y-P1.y)+N.z*(P3.z-P1.z) = 0
+		N.x = -(N.y*(P2.y-P1.y)+N.z*(P2.z-P1.z))/(P2.x-P1.x)
+		-(N.y*(P2.y-P1.y)+N.z*(P2.z-P1.z))*(P3.x-P1.x)/(P2.x-P1.x) +
+		+ N.y*(P3.y-P1.y)+N.z*(P3.z-P1.z) = 0
+		N.y*((P3.y-P1.y)-(P2.y-P1.y)*(P3.x-P1.x)/(P2.x-P1.x))=
+		=N.z*(P2.z-P1.z)*(P3.x-P1.x)/(P2.x-P1.x)-N.z*(P3.z-P1.z)
+		N.y*(P13.y - P12.y*P13.x/P12.x) = N.z*(P12.z*P13.x/P12.x-P13.z);
+		N.z = 1;
+		N.y = (P12.z*P13.x-P13.z*P12.x)/(p13.y*P12.x-P12.y*P13.x);
+		Nx = -(N.y*P12.y+P12.z)/P12.x
+	*/
+
+
+	var P12 = { x: parray[2]-parray[0], y: parray[3]-parray[1], z: 0};
+	var P13 = { x: parray[2*n-2]-parray[0],
+				y: parray[2*n-1]-parray[1], z: 0};
+	var ny = (P12.z*P13.x-P13.z*P12.x)/(P13.y*P12.x-P12.y*P13.x);
+	var N = {x: -1*(ny*P12.y+P12.z)/P12.x, y: ny, z:1 };
+	var S = {x: parray[0]-L.x, y: parray[1]-L.y, z: 0-L.z};
+	var cosa = (N.x*S.x+N.y*S.y+N.z*S.z)/Math.sqrt(N.x*N.x+N.y*N.y+N.z*N.z)/Math.sqrt(S.x*S.x+S.y*S.y+S.z*S.z);
+	console.log("cos(a)="+cosa);
+
+
+	console.log("color:"+((color&0xff0000)>>16)+" "
+			+((color&0x00ff00)>>8)+" "+(color&0x0000ff));
+	var R = Math.round(((color&0xff0000)>>16)*Math.abs(cosa))<<16;
+	var G = Math.round(((color&0x00ff00)>>8)*Math.abs(cosa))<<8;
+	var B = Math.round(((color&0x0000ff))*Math.abs(cosa));
+	console.log("R:"+R);
+	console.log("G:"+G);
+	console.log("B:"+B);
+	console.log("RGB:"+(R>>16)+" "+(G>>8)+" "+B);
+	borderFillColor(ctx, parray, Math.round(R|G|B));
+
+}
+
+function color3dPlane(L, parray, color) {
+	/*
+		N.x*(P2.x-P1.x)+N.y*(P2.y-P1.y)+N.z*(P2.z-P1.z) = 0
+		N.x*(P3.x-P1.x)+N.y*(P3.y-P1.y)+N.z*(P3.z-P1.z) = 0
+		N.x = -(N.y*(P2.y-P1.y)+N.z*(P2.z-P1.z))/(P2.x-P1.x)
+		-(N.y*(P2.y-P1.y)+N.z*(P2.z-P1.z))*(P3.x-P1.x)/(P2.x-P1.x) +
+		+ N.y*(P3.y-P1.y)+N.z*(P3.z-P1.z) = 0
+		N.y*((P3.y-P1.y)-(P2.y-P1.y)*(P3.x-P1.x)/(P2.x-P1.x))=
+		=N.z*(P2.z-P1.z)*(P3.x-P1.x)/(P2.x-P1.x)-N.z*(P3.z-P1.z)
+		N.y*(P13.y - P12.y*P13.x/P12.x) = N.z*(P12.z*P13.x/P12.x-P13.z);
+		N.z = 1;
+		N.y = (P12.z*P13.x-P13.z*P12.x)/(p13.y*P12.x-P12.y*P13.x);
+		Nx = -(N.y*P12.y+P12.z)/P12.x
+	*/
+
+
+	console.log(parray);
+	n = parray.length;
+	console.log(n);
+	var P12 = { x: parray[1].x-parray[0].x,
+				y: parray[1].y-parray[0].y,
+				z: parray[1].z-parray[0].z};
+	var P13 = { x: parray[n-1].x-parray[0].x,
+				y: parray[n-1].y-parray[0].y,
+				z: parray[n-1].z-parray[0].z};
+	var ny = (P12.z*P13.x-P13.z*P12.x)/(P13.y*P12.x-P12.y*P13.x);
+	var N = {x: -1*(ny*P12.y+P12.z)/P12.x, y: ny, z:1 };
+	console.log(N);
+	var S = {x: parray[0].x-L.x, y: parray[0].y-L.y, z: parray[0].z-L.z};
+	var cosa = (N.x*S.x+N.y*S.y+N.z*S.z)/Math.sqrt(N.x*N.x+N.y*N.y+N.z*N.z)/Math.sqrt(S.x*S.x+S.y*S.y+S.z*S.z);
+	console.log("cos(a)="+cosa);
+
+
+	console.log("color:"+((color&0xff0000)>>16)+" "
+			+((color&0x00ff00)>>8)+" "+(color&0x0000ff));
+	var R = Math.round(((color&0xff0000)>>16)*Math.abs(cosa))<<16;
+	var G = Math.round(((color&0x00ff00)>>8)*Math.abs(cosa))<<8;
+	var B = Math.round(((color&0x0000ff))*Math.abs(cosa));
+	console.log("R:"+R);
+	console.log("G:"+G);
+	console.log("B:"+B);
+	console.log("RGB:"+(R>>16)+" "+(G>>8)+" "+B);
+	var tarray = [parray[0].x, parray[0].y, parray[1].x, parray[1].y,
+					parray[2].x, parray[2].y];
+	console.log(tarray);
+	borderFillColor(ctx, tarray, Math.round(R|G|B));
+
+}
+
+	var L={x:200, y:120, z:300};
+	var Pv = {x:45, y:45, z:20};
+	var color = 0xaabbcc;
+	var alpha = 0;
+	var radius = 150;
+	setInterval(function (){
+		alpha += .1;
+		L.x = radius * Math.cos(alpha);
+		L.y = radius * Math.sin(alpha)+40;
+		color3dPlane(L,
+					[{x:20, y:20, z:0}, Pv,
+					{x:30, y:50, z:0}],
+					color);
+		color3dPlane(L,
+					[{x:90, y:90, z:10}, Pv,
+					{x:30, y:50, z:0}],
+					color);
+		color3dPlane(L,
+					[{x:90, y:90, z:10}, Pv,
+					{x:100, y:15, z:10}],
+					color);
+		color3dPlane(L,
+					[{x:100, y:15, z:10}, Pv,
+					{x:20, y:20, z:0}],
+					color);
+		}, 200);
+
+
+
+</script>
+</BODY>
+</HTML>
